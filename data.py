@@ -4,11 +4,11 @@ import formula
 
 
 # define feed (concentrations, TDS, ionic strength, osmotic coefficient, diffusivity, temperature, pH, recovery, flow)
-class feed:
+class Feed:
     def __init__ (self, conc_mg, temp, pH, rec, fl_m3h):
         self.conc_mg = conc_mg
         conc_eq = list(map(operator.truediv, conc_mg, list(formula.eq_w.values()))) # calculate eq concentration
-        conc_eq = formula.balance(conc_eq) # ion balance
+        conc_eq = formula.do_charge_balance(conc_eq) # ion balance
         self.conc_eq = conc_eq
         conc_mol = list(map(operator.truediv, conc_eq, list(formula.val.values()))) # calculate mol concentration
         self.conc_mol = conc_mol
@@ -18,15 +18,15 @@ class feed:
         self.tds_eq = tds_eq
         tds_mol = sum(conc_mol) # calculate tds mol/m3
         self.tds_mol = tds_mol 
-        istr = formula.ionic(conc_eq) # calculate ionic strength
+        istr = formula.calculate_ionic_strength(conc_eq) # calculate ionic strength
         self.istr = istr
-        osm_coef = formula.osmotic(temp, istr) # calulate osmotic coefficient
+        osm_coef = formula.calculate_osmotic_coefficient(temp, istr) # calulate osmotic coefficient
         self.osm_coef = osm_coef
-        fr_mol = formula.fraction(conc_mol) # calculate mol fraction
+        fr_mol = formula.calculate_fraction(conc_mol) # calculate mol fraction
         self.fr_mol = fr_mol
-        fr_eq = formula.fraction(conc_eq) # calculate equivalent fraction
+        fr_eq = formula.calculate_fraction(conc_eq) # calculate equivalent fraction
         self.fr_eq = fr_eq
-        diff = sum(list(map(operator.mul, fr_mol, list(formula.diff_coef.values())))) # calculate diffusivity
+        diff = formula.calculate_diffusivity("Na", "Cl") # calculate diffusivity
         self.diff = diff
         self.temp = temp
         self.pH = pH
@@ -34,8 +34,8 @@ class feed:
         self.fl_m3h = fl_m3h
         fl_m3s = fl_m3h/3600 # calculate flow m3/s
         self.fl_m3s = fl_m3s
-        self.dens = formula.density(temp, tds_mg)
-        self.kvis = formula.viscosity(temp, tds_mg)
+        self.dens = formula.calculate_density(temp, tds_mg) # calculate water density
+        self.kvis = formula.calculate_viscosity(temp, tds_mg) # calculate water viscosity
         self.pres = 0
         self.si = 0
         self.foul = []
@@ -44,7 +44,7 @@ class feed:
 
 
 # define membrane (area, module diameter, spacer thickness, modul length, effective area, a1,2,3, b1,2,3, Lw0, Ls0, x, y)
-class membrane:
+class Membrane:
     def __init__ (self, area, diam, thik, leng, a1, a2, a3, b1, b2, b3, lw0, ls0, x, y):
         self.area = area
         self.diam = diam
@@ -63,11 +63,11 @@ class membrane:
         self.x = x
         self.y = y
 
-class permeate:
+class Permeate:
     def __init__ (self):
         pass
 
 
-class concentrate:
+class Concentrate:
     def __init__ (self):
         pass

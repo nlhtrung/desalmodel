@@ -54,8 +54,8 @@ rjec_coef = {
     "NO3": 8,
 }
 
-# charge balance #
-def balance(conc):
+# charge balance (concentration in eq/m3) #
+def do_charge_balance(conc):
     c = 0
     for n in range (4): # cations
         c += conc[n]
@@ -69,8 +69,8 @@ def balance(conc):
     return conc
 # end #
 
-# phreeqc water analysis #
-def in_analysis(conc, temp, pH):
+# phreeqc water analysis (concentration in eq/m3, temperature, pH, dissolved CO2) #
+def do_phreeqc_input(conc, temp, pH):
     pp = phreeqpython.PhreeqPython()
     solution = pp.add_solution({
         "units": "mg/L",
@@ -89,7 +89,7 @@ def in_analysis(conc, temp, pH):
     co2 = solution.total("CO2", units="mg")
     return (conc, solution.phases, co2)
 
-def out_analysis(conc, temp, co2):
+def do_phreeqc_output(conc, temp, co2):
     pp = phreeqpython.PhreeqPython()
     solution = pp.add_solution({
         "units": "mg/L",
@@ -108,8 +108,9 @@ def out_analysis(conc, temp, co2):
     return (pH, solution.phases)
 # end #
 
-# fouling index # https://www.usbr.gov/tsc/techreferences/mands/mands-pdfs/WQeval_documentation.pdf
-def fouling(ca, tds, alk, pH, temp, istr):
+# scaling index (Calcium concentration, TDS, Alkalinity, pH, temperature, ionic strength) # 
+# https://www.usbr.gov/tsc/techreferences/mands/mands-pdfs/WQeval_documentation.pdf
+def calculate_scaling_index(ca, tds, alk, pH, temp, istr):
     pca = -math.log10(ca/1000)
     palk = -math.log10(alk/1000)
     temp = temp*9/5 + 32
@@ -123,8 +124,8 @@ def fouling(ca, tds, alk, pH, temp, istr):
     return (lsi, sdsi)
 # end #
 
-# density calculation kg/m3 #
-def density(temp, tds):
+# density kg/m3 (temperature, TDS) #
+def calculate_density(temp, tds):
     sal = tds/1000
     a = (2*temp - 200)/160
     b = (2*sal - 150)/150
@@ -143,20 +144,20 @@ def density(temp, tds):
     return dens
 # end #
 
-# kinematic viscosity calculation m2/s #
-def viscosity(temp, tds):
+# kinematic viscosity m2/s (temperature, TDS) #
+def calculate_viscosity(temp, tds):
     sal = tds/1000
     a = 1.474*10**-3 + 1.5*10**-5*temp - 3.927*10**-8*temp**2
     b = 1.0734*10**-5 - 8.5*10**-8*temp + 2.23*10**-10*temp**2
     dvis_w = math.exp(-3.79418 + 604.129/(139.18 + temp))
     dvis_s = 1 + a*sal + b*sal**2
     dvis = dvis_w*dvis_s*10**-3
-    kvis = dvis/density(temp, tds)
+    kvis = dvis/calculate_density(temp, tds)
     return kvis
 # end #
 
-# osmotic coefficient #
-def osmotic(temp, istr):
+# osmotic coefficient (temperature, ionic strength) #
+def calculate_osmotic_coefficient(temp, istr):
     a = 20.661 - 432.5797/(temp + 273) - 3.712*math.log(temp + 273) + 8.638*10**-3*(temp + 273)
     b = 2.303/istr**1.5*((1 + istr**0.5) - 1/(1 + istr**0.5) - 2*math.log(1 + istr**0.5))
     c = -831.659 + 17022.399/(temp + 273) + 157.653*math.log(temp + 273) - 0.493*(temp + 273) + 2.595*10**-4*(temp + 273)**2
@@ -165,87 +166,89 @@ def osmotic(temp, istr):
     return 1 - (a*b*istr**0.5 + c*istr + d*istr**1.5 + e*istr**2)
 # end #
 
-# ionic strength
-def ionic(conc):
+# ionic strength (concentration in eq/m3)
+def calculate_ionic_strength(conc):
     return sum(list(map(operator.mul, conc, list(val.values()))))/2/1000
 
-# fraction
-def fraction(conc):
+# diffusivity (cation name, anion name)
+def calculate_diffusivity(cation, anion):
+    return (val[cation] + val[anion])*diff_coef[cation]*diff_coef[anion]/ \
+        (val[cation]*diff_coef[cation] + val[anion]*diff_coef[anion])
+
+# concentration fraction (concentration)
+def calculate_fraction(conc):
     return [x/sum(conc) for x in conc]
 
-# flow
-def flow(feed, rec):
+# flow (feed flow, recovery rate)
+def calculate_flow(feed, rec):
     return (feed*rec, feed*(1-rec))
 
-# concentrate tds
-def concentrate(flow_f, flow_p, flow_c, conc_f, conc_p):
+# concentrate species (feed/permeate/concentrate flow, feed/permeate concentration)
+def calculate_concentrate_species(flow_f, flow_p, flow_c, conc_f, conc_p):
     f = (flow_f*x for x in conc_f)
     p = (flow_p*x for x in conc_p)
     c = list(map(operator.sub, f, p))
     return [x/flow_c for x in c]
 
-# reynolds
-def reynolds(feed, conc, kvis, thik, effa):
+# reynolds (feed/concentrate flow, kinematic viscosity, spacer thickness, effective area)
+def calculate_reynolds_number(feed, conc, kvis, thik, effa):
     return (feed + conc)/2/effa*thik*2/kvis
 
-# schmidt
-def schmidt(kvis, diff):
+# schmidt (kinematic viscosity, diffusivity)
+def calculate_schmidt_number(kvis, diff):
     return kvis/diff*10**9
 
-# transport coefficient
-def transport(diff, rey, scm, thik):
+# transport coefficient (diffusivity, reynolds, schmidt number, spacer thickness)
+def calculate_transport_coefficient(diff, rey, scm, thik):
     return 0.065*rey**0.875*scm**0.25*diff*10**-9/(thik*2)
 
-# flux
-def flux(flow, area):
+# flux (permeate flow, total surface area)
+def calculate_permeate_flux(flow, area):
     return flow/area*1000
 
-# fouling factor
-def ff(flux, k):
+# concentration polarisation factor (permeate flux, transport coefficient)
+def calculate_cp_factor(flux, k):
     return math.exp(flux/k/1000)
 
-# solvent transport
-def solvent(lw0, temp, conc, ff, a1, a2, a3):
-    return lw0*math.exp(a1*math.log(temp/273) + a2*conc/1000 + a3*ff)
+# solvent permeability (membrane intrinsic permeabilty, temperature, feed concentration, cp factor, model parameters)
+def calculate_solvent_permeabilty(lw0, temp, conc, cpf, a1, a2, a3):
+    return lw0*math.exp(a1*math.log(temp/273) + a2*conc/1000 + a3*cpf)
 
-# solute transport
-def solute(ls0, temp, conc, ff, b1, b2, b3):
-    return ls0*math.exp(b1*math.log(temp/273) + b2*math.log(conc/1000) + b3*ff)
+# solute permeability (membrane intrinsic permeability, temperature, feed concentration, cp factor, model parameters)
+def calculate_solute_permeability(ls0, temp, conc, cpf, b1, b2, b3):
+    return ls0*math.exp(b1*math.log(temp/273) + b2*math.log(conc/1000) + b3*cpf)
 
-# friction drop
-def friction(rey, x, y):
+# friction drop (reynolds number, model parameters)
+def calculate_friction_drop(rey, x, y):
     return x*rey**y/100
 
-# concentrate pressure
-def pressure(conc_f, conc_c, conc_p, temp, osm_coef, lw, flux):
+# concentrate pressure (feed/concentrate/permeate concentration, temperature, osmotic coefficient, solvent permeability, permeate flux)
+def calculate_concentrate_pressure(conc_f, conc_c, conc_p, temp, osm_coef, lw, flux):
     dpi = ((conc_f + conc_c)/2 - conc_p)*8.3144598*(temp + 273)*osm_coef*10**-5
     return flux*3600/lw + dpi
 
-# ion calculation #
-def ion_cal(conc, rjec_coef, solute, flux):
-    fr_eq = fraction(conc)
+# permeate species (feed concentration, rejection coefficient, solute permeability, permeate flux) #
+def calculate_permeate_species(conc, rjec_coef, solute, flux):
+    fr_eq = calculate_fraction(conc)
     rjec_coef = list(rjec_coef.values())
-    def cal(fr_eq, rjec_coef):
-        a = []
-        i = 0
-        for x in fr_eq:
-            if x == 0:
-                a.append(0)
-            elif i < 4: # cations
-                z = 0
-                for n in range(4): 
-                    z += fr_eq[n]*rjec_coef[n]
-                y = rjec_coef[i]/z/2
-                a.append(y)
-            else: # anions
-                z = 0
-                for n in range(4, 9): 
-                    z += fr_eq[n]*rjec_coef[n]
-                y = rjec_coef[i]/z/2
-                a.append(y)
-            i += 1
-        return a
-    a = cal(fr_eq, rjec_coef)
+    a = []
+    i = 0
+    for x in fr_eq:
+        if x == 0:
+            a.append(0)
+        elif i < 4: # cations
+            z = 0
+            for n in range(4): 
+                z += fr_eq[n]*rjec_coef[n]
+            y = rjec_coef[i]/z/2
+            a.append(y)
+        else: # anions
+            z = 0
+            for n in range(4, 9): 
+                z += fr_eq[n]*rjec_coef[n]
+            y = rjec_coef[i]/z/2
+            a.append(y)
+        i += 1
     b = sum(list(map(operator.mul, fr_eq, rjec_coef)))  
     c = list(map(operator.mul, [solute*sum(conc)*x*b/(flux*3600) for x in fr_eq], a))
     # return permeate concentration in eq/m3, mg/L and mol/m3
