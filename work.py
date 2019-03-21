@@ -2,33 +2,31 @@ import data
 import formula
 
 in1 = [{
-    "Na": 82.76,
-    "Ca": 176.41,
-    "Mg": 33.31,
-    "K": 1.75,
-    "Cl": 269.66,
-    "SO4": 95.97,
+    "Na": 340,
+    "Ca": 223,
+    "Mg": 107,
+    "K": 7,
+    "Cl": 728.21,
+    "SO4": 176,
     "CO3": 0,
-    "HCO3": 116.49,
-    "NO3": 227.56},
-    25,
-    7.4,
-    0.2,
-    1]
+    "HCO3": 242,
+    "NO3": 416},
+    29,
+    7.1,
+    0.15,
+    5]
 
-membrane1 = data.Membrane(7.9, 0.1, 0.0008, 0.964, \
-    0.782360338895866, -0.717007003850838, -0.275798741964664, \
-        0.969656473719167, 0.424364559615452, 4.46574778569048, \
-            31.0518275461852, 0.06918357125442, \
-                0.000203655002873562, 1.74547844949712)
+membrane1 = data.Membrane(37, 0.1, 0.0007, 1, 0.902, -0.569, -1.996, 1.316, 0, 5.709, 161.972, 0.005, 12, 0)
 
 
 
 
 in1[0] = formula.do_phreeqc_input(list(in1[0].values()), in1[1], in1[2])[0]
 co2 = formula.do_phreeqc_input(in1[0], in1[1], in1[2])[2]
+feed_flow = formula.do_system_design(in1[4], formula.typ_flux["BW"], membrane1.area, in1[3])[0]
+no_of_pass = formula.do_system_design(in1[4], formula.typ_flux["BW"], membrane1.area, in1[3])[1]
 
-feed1 = data.Feed(in1[0], in1[1], in1[2], in1[3], in1[4])
+feed1 = data.Feed(in1[0], in1[1], in1[2], in1[3], feed_flow)
 permeate1 = data.Permeate()
 concentrate1 = data.Concentrate()
 
@@ -69,9 +67,9 @@ permeate1.si = formula.do_phreeqc_output(permeate1.conc_mg, feed1.temp, co2)[1]
 concentrate1.si = formula.do_phreeqc_output(concentrate1.conc_mg, feed1.temp, co2)[1]
 concentrate1.istr = formula.calculate_ionic_strength(concentrate1.conc_eq)
 permeate1.istr = formula.calculate_ionic_strength(permeate1.conc_eq)
-feed1.foul = formula.calculate_scaling_index(feed1.conc_mol[1], feed1.tds_mg, feed1.conc_mol[7], feed1.pH, feed1.temp, feed1.istr)
-concentrate1.foul = formula.calculate_scaling_index(concentrate1.conc_mol[1], concentrate1.tds_mg, concentrate1.conc_mol[7], concentrate1.pH, concentrate1.temp, concentrate1.istr)
-permeate1.foul = formula.calculate_scaling_index(permeate1.conc_mol[1], permeate1.tds_mg, permeate1.conc_mol[7], permeate1.pH, permeate1.temp, permeate1.istr)
+feed1.scale = formula.calculate_scaling_index(feed1.conc_mol[1], feed1.tds_mg, feed1.conc_mol[7], feed1.pH, feed1.temp, feed1.istr)
+concentrate1.scale = formula.calculate_scaling_index(concentrate1.conc_mol[1], concentrate1.tds_mg, concentrate1.conc_mol[7], concentrate1.pH, concentrate1.temp, concentrate1.istr)
+permeate1.scale = formula.calculate_scaling_index(permeate1.conc_mol[1], permeate1.tds_mg, permeate1.conc_mol[7], permeate1.pH, permeate1.temp, permeate1.istr)
 
 out1 = {
     "Na": permeate1.conc_mg[0],
@@ -83,9 +81,13 @@ out1 = {
     "CO3": permeate1.conc_mg[6],
     "HCO3": permeate1.conc_mg[7],
     "NO3": permeate1.conc_mg[8],
+    "TDS": permeate1.tds_mg
 }
 
 out2 = feed1.pres
+
+print("\nNumber of pass:")
+print(no_of_pass)
 
 print("\nPermeate concentration:")
 for x in out1:
@@ -97,6 +99,6 @@ print("\nConcentrate SI:")
 for x in concentrate1.si:
     if concentrate1.si[x] > 0:
         print(x, round(concentrate1.si[x], 4))
-print("LSI", round(concentrate1.foul[0], 4))
-print("SDSI", round(concentrate1.foul[1], 4))
+print("LSI", round(concentrate1.scale[0], 4))
+print("SDSI", round(concentrate1.scale[1], 4))
 print("\n")

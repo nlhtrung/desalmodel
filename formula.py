@@ -54,6 +54,20 @@ rjec_coef = {
     "NO3": 8,
 }
 
+# typical flux
+typ_flux = {
+    "BW": 0.029,
+    "SW": 0.017,
+}
+
+# system design #
+def do_system_design(flow, flux, area, rec):
+    el_flow = flux*area
+    no_of_pass = math.ceil(flow*rec/el_flow)
+    flow = flow/no_of_pass
+    return (flow, no_of_pass)
+# end #
+
 # charge balance (concentration in eq/m3) #
 def do_charge_balance(conc):
     c = 0
@@ -250,7 +264,7 @@ def calculate_permeate_species(conc, rjec_coef, solute, flux):
             a.append(y)
         i += 1
     b = sum(list(map(operator.mul, fr_eq, rjec_coef)))  
-    c = list(map(operator.mul, [solute*sum(conc)*x*b/(flux*3600) for x in fr_eq], a))
+    c = list(map(operator.mul, [solute*sum(conc)*x*b/(flux*3600 + solute) for x in fr_eq], a))
     # return permeate concentration in eq/m3, mg/L and mol/m3
     return (c, list(map(operator.mul, c, list(eq_w.values()))), list(map(operator.truediv, c, list(val.values()))))    
 # end #
