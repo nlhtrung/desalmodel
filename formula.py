@@ -7,12 +7,12 @@ eq_w = {
     "Na": 22.99,
     "Ca": 20.04,
     "Mg": 12.16,
-    "K": 39.1,
+    "K": 39.10,
     "Cl": 35.45,
     "SO4": 48.03,
-    "CO3": 30,
+    "CO3": 30.00,
     "HCO3": 61.02,
-    "NO3": 62,
+    "NO3": 62.00,
 }
 
 # valency
@@ -42,27 +42,56 @@ diff_coef = {
 }
 
 # rejection coefficient
-rjec_coef = {
-    "Na": 1,
-    "Ca": 0.35,
-    "Mg": 0.35,
-    "K": 1.5,
-    "Cl": 1,
-    "SO4": 0.2,
-    "CO3": 0.05,
-    "HCO3": 1,
-    "NO3": 8,
+rjec_coef = { 
+    "BW": {
+        "Na": 1,
+        "Ca": 0.25,
+        "Mg": 0.25,
+        "K": 2.5,
+        "Cl": 1,
+        "SO4": 0.65,
+        "CO3": 0.005,
+        "HCO3": 0.90,
+        "NO3": 1.20,
+    },
+    "SW": {
+        "Na": 1,
+        "Ca": 0.65,
+        "Mg": 0.65,
+        "K": 4.50,
+        "Cl": 1,
+        "SO4": 1.50,
+        "CO3": 0.005,
+        "HCO3": 0.50,
+        "NO3": 0.80,
+    },
+    "NF": {
+        "Na": 1,
+        "Ca": 0.06,
+        "Mg": 0.06,
+        "K": 2.50,
+        "Cl": 1,
+        "SO4": 0.35,
+        "CO3": 0.005,
+        "HCO3": 0.25,
+        "NO3": 4.00,
+    },
 }
 
-# typical flux
-typ_flux = {
-    "BW": 0.029,
-    "SW": 0.017,
+# maximum flux
+max_flux = {
+    "BW": 0.034,
+    "SW": 0.020,
 }
+
+# ERD and pump efficiency
+erd_eff = 0.8
+pump_eff = 0.8
 
 # system design #
-def do_system_design(flow, flux, area, rec):
+def do_system_design(flow, flux, area, rec, blend_fr):
     el_flow = flux*area
+    flow = flow*blend_fr
     no_of_pass = math.ceil(flow*rec/el_flow)
     flow = flow/no_of_pass
     return (flow, no_of_pass)
@@ -124,17 +153,22 @@ def do_phreeqc_output(conc, temp, co2):
 
 # scaling index (Calcium concentration, TDS, Alkalinity, pH, temperature, ionic strength) # 
 # https://www.usbr.gov/tsc/techreferences/mands/mands-pdfs/WQeval_documentation.pdf
-def calculate_scaling_index(ca, tds, alk, pH, temp, istr):
-    pca = -math.log10(ca/1000)
-    palk = -math.log10(alk/1000)
-    temp = temp*9/5 + 32
-    c = 3.26*math.exp(-0.005*temp) - 0.0116*math.log10(tds**3) + 0.0905*math.log10(tds**2) - 0.133*math.log10(tds) - 0.02
-    lsi = pH - (pca + palk + c)
-    if istr < 1.2:
-        k = 2.022*math.exp((math.log(istr) + 7.544)**2/102.60) - 0.0002*temp**2 + 0.00097*temp + 0.262
+def calculate_scaling_index(ca, tds, hco3, co3, pH, temp, istr):
+    alk = hco3 + 2*co3
+    if alk != 0:
+        pca = -math.log10(ca/1000)
+        palk = -math.log10(alk/1000)
+        temp = temp*9/5 + 32
+        c = 3.26*math.exp(-0.005*temp) - 0.0116*math.log10(tds**3) + 0.0905*math.log10(tds**2) - 0.133*math.log10(tds) - 0.02
+        lsi = round(pH - (pca + palk + c), 3)
+        if istr < 1.2:
+            k = 2.022*math.exp((math.log(istr) + 7.544)**2/102.60) - 0.0002*temp**2 + 0.00097*temp + 0.262
+        else:
+            k = -0.1*istr - 0.0002*temp**2 -0.00097*temp + 3.887
+        sdsi = round(pH - (pca + palk + k), 3)
     else:
-        k = -0.1*istr - 0.0002*temp**2 -0.00097*temp + 3.887
-    sdsi = pH - (pca + palk + k)
+        lsi = "n/a"
+        sdsi = "n/a"   
     return (lsi, sdsi)
 # end #
 
@@ -153,7 +187,7 @@ def calculate_density(temp, tds):
     a1 = 4.032219*g1 + 0.115313*g2 + 3.26*10**-4*g3
     a2 = -0.108199*g1 + 1.571*10**-3*g2 - 4.23*10**-4*g3
     a3 = -0.012247*g1 + 1.74*10**-3*g2 - 9*10**-6*g3
-    a4 = 6.92*10**-4*g1 - 8.7*10**-5*g2 -5.3*10**-5*g3
+    a4 = 6.92*10**-4*g1 - 8.7*10**-5*g2 - 5.3*10**-5*g3
     dens = (a1*f1 + a2*f2 + a3*f3 + a4*f4)*10**3
     return dens
 # end #
@@ -214,7 +248,7 @@ def calculate_schmidt_number(kvis, diff):
 
 # transport coefficient (diffusivity, reynolds, schmidt number, spacer thickness)
 def calculate_transport_coefficient(diff, rey, scm, thik):
-    return 0.065*rey**0.875*scm**0.25*diff*10**-9/(thik*2)
+    return 0.023*rey**0.875*scm**0.25*diff*10**-9/(thik*2)
 
 # flux (permeate flow, total surface area)
 def calculate_permeate_flux(flow, area):
@@ -236,8 +270,8 @@ def calculate_solute_permeability(ls0, temp, conc, cpf, b1, b2, b3):
 def calculate_friction_drop(rey, x, y):
     return x*rey**y/100
 
-# concentrate pressure (feed/concentrate/permeate concentration, temperature, osmotic coefficient, solvent permeability, permeate flux)
-def calculate_concentrate_pressure(conc_f, conc_c, conc_p, temp, osm_coef, lw, flux):
+# transmembrane pressure (feed/concentrate/permeate concentration, temperature, osmotic coefficient, solvent permeability, permeate flux)
+def calculate_transmembrane_pressure(conc_f, conc_c, conc_p, temp, osm_coef, lw, flux):
     dpi = ((conc_f + conc_c)/2 - conc_p)*8.3144598*(temp + 273)*osm_coef*10**-5
     return flux*3600/lw + dpi
 
@@ -264,9 +298,70 @@ def calculate_permeate_species(conc, rjec_coef, solute, flux):
             a.append(y)
         i += 1
     b = sum(list(map(operator.mul, fr_eq, rjec_coef)))  
-    c = list(map(operator.mul, [solute*sum(conc)*x*b/(flux*3600 + solute) for x in fr_eq], a))
+    c = list(map(operator.mul, [solute*x*b/(flux*3600 + solute) for x in conc], a))
     # return permeate concentration in eq/m3, mg/L and mol/m3
     return (c, list(map(operator.mul, c, list(eq_w.values()))), list(map(operator.truediv, c, list(val.values()))))    
 # end #
 
+# salt rejection (feed TDS, permeate TDS)
+def calculate_salt_rejection(feed, permeate):
+    sr = 1 - permeate/feed
+    return sr
+
+# blending fraction (module recovery, system recovery)
+def calculate_blending_fraction(mod_rec, sys_rec):
+    blend_fr = (1 - sys_rec)/(1 - mod_rec)
+    return blend_fr
+
+# specific energy consumption (blending fraction, ERD efficiency, module recovery, system recovery, TMP)
+def calculate_energy_consumption(blend_fr, erd_eff, pump_eff, mod_rec, tmp):
+    sec = blend_fr*(1 - erd_eff)/(1 - (1 - mod_rec)*blend_fr)*tmp/36
+    return sec
+
+# solution blending #
+def do_phreeqc_blending(conc_f, temp_f, pH_f, conc_p, temp_p, pH_p, blend_fr, mod_rec):
+    pp = phreeqpython.PhreeqPython()
+    solution_f = pp.add_solution({
+        "units": "mg/L",
+        "pH": pH_f,
+        "temp": temp_f,
+        "Na": conc_f[0],
+        "Ca": conc_f[1],
+        "Mg": conc_f[2],
+        "K": conc_f[3],
+        "Cl": str(conc_f[4]) + " as Cl",
+        "S(6)": str(conc_f[5]) + " as SO4",
+        "Alkalinity": str(conc_f[6]*2 + conc_f[7]) + " as HCO3",
+        "N(5)": str(conc_f[8]) + " as NO3"
+    })
+    solution_p = pp.add_solution({
+        "units": "mg/L",
+        "pH": pH_p,
+        "temp": temp_p,
+        "Na": conc_p[0],
+        "Ca": conc_p[1],
+        "Mg": conc_p[2],
+        "K": conc_p[3],
+        "Cl": str(conc_p[4]) + " as Cl",
+        "S(6)": str(conc_p[5]) + " as SO4",
+        "Alkalinity": str(conc_p[6]*2 + conc_p[7]) + " as HCO3",
+        "N(5)": str(conc_p[8]) + " as NO3"
+    })
+    a = (1 - blend_fr)/(1 - blend_fr + blend_fr*mod_rec)
+    solution_b = solution_f*a + solution_p*(1 - a)
+    conc_b = [
+        solution_b.total("Na", units="mg"),
+        solution_b.total("Ca", units="mg"),
+        solution_b.total("Mg", units="mg"),
+        solution_b.total("K", units="mg"),
+        solution_b.total("Cl", units="mg"),
+        solution_b.total("S", units="mg"),
+        solution_b.total("CO3", units="mg"),
+        solution_b.total("HCO3", units="mg"),
+        solution_b.total("NO3", units="mg"),
+    ]
+    pH_b = solution_b.pH
+    temp_b = solution_b.temperature
+    return (conc_b, pH_b, temp_b)
+# end #
 

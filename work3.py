@@ -3,38 +3,38 @@ import formula
 
 input_water = {
     "concentration": {
-        "Na": 4658,
-        "Ca": 546,
-        "Mg": 1130,
-        "K": 100,
-        "Cl": 10645,
-        "SO4": 1057,
+        "Na": 80.5,
+        "Ca": 171.6,
+        "Mg": 32.4,
+        "K": 1.7,
+        "Cl": 272.6,
+        "SO4": 97.1,
         "CO3": 0,
-        "HCO3": 154,
-        "NO3": 0},
-    "temperature": 21,
-    "pH": 7.2,
+        "HCO3": 118,
+        "NO3": 230},
+    "temperature": 14,
+    "pH": 7.6,
     "module recovery": 0.19,
-    "system recovery": 0.19,
+    "system recovery": 0.20,
     "flow rate": 25,
-    "water type": "SW"}
+    "water type": "BW"}
 
 input_membrane = {
-    "surface area": 37,
+    "surface area": 7.6,
     "module diameter": 0.1,
-    "spacer thickness": 0.0007,
+    "spacer thickness": 0.00086,
     "module length": 1,
-    "a1": 0.916,
-    "a2": -0.566,
-    "a3": -1.790,
-    "b1": 1.316,
+    "a1": 0.967,
+    "a2": -1.337,
+    "a3": -0.459,
+    "b1": 1.381,
     "b2": 0,
-    "b3": 5.709,
-    "lw0": 128.442,
-    "ls0": 0.00486,
-    "x": 12,
+    "b3": 1.121,
+    "lw0": 188.949,
+    "ls0": 15.954,
+    "x": 18,
     "y": 0,
-    "membrane type": "SW"
+    "membrane type": "NF"
 }
 
 

@@ -3,13 +3,14 @@ import formula
 
 
 
-# define feed (concentrations, TDS, ionic strength, osmotic coefficient, diffusivity, temperature, pH, recovery, flow)
+# define feed (concentrations, temperature, pH, module recovery, system recovery, flow rate in m3/h)
 class Feed:
-    def __init__ (self, conc_mg, temp, pH, rec, fl_m3h):
-        self.conc_mg = conc_mg
+    def __init__ (self, conc_mg, temp, pH, mod_rec, fl_m3h):   
         conc_eq = list(map(operator.truediv, conc_mg, list(formula.eq_w.values()))) # calculate eq concentration
         conc_eq = formula.do_charge_balance(conc_eq) # ion balance
         self.conc_eq = conc_eq
+        conc_mg = list(map(operator.mul, conc_eq, list(formula.eq_w.values()))) # calculate mass concentration
+        self.conc_mg = conc_mg
         conc_mol = list(map(operator.truediv, conc_eq, list(formula.val.values()))) # calculate mol concentration
         self.conc_mol = conc_mol
         tds_mg = sum(conc_mg) # calculate tds mg/L
@@ -30,7 +31,7 @@ class Feed:
         self.diff = diff
         self.temp = temp
         self.pH = pH
-        self.rec = rec
+        self.mod_rec = mod_rec
         self.fl_m3h = fl_m3h
         fl_m3s = fl_m3h/3600 # calculate flow m3/s
         self.fl_m3s = fl_m3s
@@ -38,12 +39,12 @@ class Feed:
         self.kvis = formula.calculate_viscosity(temp, tds_mg) # calculate water viscosity
         self.pres = 0
         self.si = 0
-        self.foul = []
+        self.scale = []
 
 
 
 
-# define membrane (area, module diameter, spacer thickness, modul length, effective area, a1,2,3, b1,2,3, Lw0, Ls0, x, y)
+# define membrane (area, module diameter, spacer thickness, module length, effective area, a1,2,3, b1,2,3, Lw0, Ls0, x, y)
 class Membrane:
     def __init__ (self, area, diam, thik, leng, a1, a2, a3, b1, b2, b3, lw0, ls0, x, y):
         self.area = area
