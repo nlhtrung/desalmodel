@@ -1,17 +1,18 @@
 import operator
-import formula
+import desal_formula
+import desal_constant
 
 
 
 # define feed (concentrations, temperature, pH, module recovery, system recovery, flow rate in m3/h)
 class Feed:
     def __init__ (self, conc_mg, temp, pH, mod_rec, fl_m3h):   
-        conc_eq = list(map(operator.truediv, conc_mg, list(formula.eq_w.values()))) # calculate eq concentration
-        conc_eq = formula.do_charge_balance(conc_eq) # ion balance
+        conc_eq = list(map(operator.truediv, conc_mg, list(desal_constant.eq_w.values()))) # calculate eq concentration
+        conc_eq = desal_formula.do_charge_balance(conc_eq) # ion balance
         self.conc_eq = conc_eq
-        conc_mg = list(map(operator.mul, conc_eq, list(formula.eq_w.values()))) # calculate mass concentration
+        conc_mg = list(map(operator.mul, conc_eq, list(desal_constant.eq_w.values()))) # calculate mass concentration
         self.conc_mg = conc_mg
-        conc_mol = list(map(operator.truediv, conc_eq, list(formula.val.values()))) # calculate mol concentration
+        conc_mol = list(map(operator.truediv, conc_eq, list(desal_constant.val.values()))) # calculate mol concentration
         self.conc_mol = conc_mol
         tds_mg = sum(conc_mg) # calculate tds mg/L
         self.tds_mg = tds_mg
@@ -19,15 +20,15 @@ class Feed:
         self.tds_eq = tds_eq
         tds_mol = sum(conc_mol) # calculate tds mol/m3
         self.tds_mol = tds_mol 
-        istr = formula.calculate_ionic_strength(conc_eq) # calculate ionic strength
+        istr = desal_formula.calculate_ionic_strength(conc_eq) # calculate ionic strength
         self.istr = istr
-        osm_coef = formula.calculate_osmotic_coefficient(temp, istr) # calulate osmotic coefficient
+        osm_coef = desal_formula.calculate_osmotic_coefficient(temp, istr) # calulate osmotic coefficient
         self.osm_coef = osm_coef
-        fr_mol = formula.calculate_fraction(conc_mol) # calculate mol fraction
+        fr_mol = desal_formula.calculate_fraction(conc_mol) # calculate mol fraction
         self.fr_mol = fr_mol
-        fr_eq = formula.calculate_fraction(conc_eq) # calculate equivalent fraction
+        fr_eq = desal_formula.calculate_fraction(conc_eq) # calculate equivalent fraction
         self.fr_eq = fr_eq
-        diff = formula.calculate_diffusivity("Na", "Cl") # calculate diffusivity
+        diff = desal_formula.calculate_diffusivity("Na", "Cl") # calculate diffusivity
         self.diff = diff
         self.temp = temp
         self.pH = pH
@@ -35,8 +36,8 @@ class Feed:
         self.fl_m3h = fl_m3h
         fl_m3s = fl_m3h/3600 # calculate flow m3/s
         self.fl_m3s = fl_m3s
-        self.dens = formula.calculate_density(temp, tds_mg) # calculate water density
-        self.kvis = formula.calculate_viscosity(temp, tds_mg) # calculate water viscosity
+        self.dens = desal_formula.calculate_density(temp, tds_mg) # calculate water density
+        self.kvis = desal_formula.calculate_viscosity(temp, tds_mg) # calculate water viscosity
         self.pres = 0
         self.si = 0
         self.scale = []

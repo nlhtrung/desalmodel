@@ -1,92 +1,8 @@
 import math
 import operator
 import phreeqpython # https://github.com/Vitens/phreeqpython
+import desal_constant
 
-# equivalent weight
-eq_w = {
-    "Na": 22.99,
-    "Ca": 20.04,
-    "Mg": 12.16,
-    "K": 39.10,
-    "Cl": 35.45,
-    "SO4": 48.03,
-    "CO3": 30.00,
-    "HCO3": 61.02,
-    "NO3": 62.00,
-}
-
-# valency
-val = {
-    "Na": 1,
-    "Ca": 2,
-    "Mg": 2,
-    "K": 1,
-    "Cl": 1,
-    "SO4": 2,
-    "CO3": 2,
-    "HCO3": 1,
-    "NO3": 1,
-}
-
-# diffusion coefficient
-diff_coef = {
-    "Na": 1.334,
-    "Ca": 0.792,
-    "Mg": 0.706,
-    "K": 1.957,
-    "Cl": 2.032,
-    "SO4": 1.065,
-    "CO3": 0.923,
-    "HCO3": 1.185,
-    "NO3": 1.902,
-}
-
-# rejection coefficient
-rjec_coef = { 
-    "BW": {
-        "Na": 1,
-        "Ca": 0.25,
-        "Mg": 0.25,
-        "K": 2.5,
-        "Cl": 1,
-        "SO4": 0.65,
-        "CO3": 0.005,
-        "HCO3": 0.90,
-        "NO3": 1.20,
-    },
-    "SW": {
-        "Na": 1,
-        "Ca": 0.65,
-        "Mg": 0.65,
-        "K": 4.50,
-        "Cl": 1,
-        "SO4": 1.50,
-        "CO3": 0.005,
-        "HCO3": 0.50,
-        "NO3": 0.80,
-    },
-    "NF": {
-        "Na": 1,
-        "Ca": 0.06,
-        "Mg": 0.06,
-        "K": 2.50,
-        "Cl": 1,
-        "SO4": 0.35,
-        "CO3": 0.005,
-        "HCO3": 0.25,
-        "NO3": 4.00,
-    },
-}
-
-# maximum flux
-max_flux = {
-    "BW": 0.034,
-    "SW": 0.020,
-}
-
-# ERD and pump efficiency
-erd_eff = 0.8
-pump_eff = 0.8
 
 # system design #
 def do_system_design(flow, flux, area, rec, blend_fr):
@@ -216,12 +132,12 @@ def calculate_osmotic_coefficient(temp, istr):
 
 # ionic strength (concentration in eq/m3)
 def calculate_ionic_strength(conc):
-    return sum(list(map(operator.mul, conc, list(val.values()))))/2/1000
+    return sum(list(map(operator.mul, conc, list(desal_constant.val.values()))))/2/1000
 
 # diffusivity (cation name, anion name)
 def calculate_diffusivity(cation, anion):
-    return (val[cation] + val[anion])*diff_coef[cation]*diff_coef[anion]/ \
-        (val[cation]*diff_coef[cation] + val[anion]*diff_coef[anion])
+    return (desal_constant.val[cation] + desal_constant.val[anion])*desal_constant.diff_coef[cation]*desal_constant.diff_coef[anion]/ \
+        (desal_constant.val[cation]*desal_constant.diff_coef[cation] + desal_constant.val[anion]*desal_constant.diff_coef[anion])
 
 # concentration fraction (concentration)
 def calculate_fraction(conc):
@@ -300,7 +216,7 @@ def calculate_permeate_species(conc, rjec_coef, solute, flux):
     b = sum(list(map(operator.mul, fr_eq, rjec_coef)))  
     c = list(map(operator.mul, [solute*x*b/(flux*3600 + solute) for x in conc], a))
     # return permeate concentration in eq/m3, mg/L and mol/m3
-    return (c, list(map(operator.mul, c, list(eq_w.values()))), list(map(operator.truediv, c, list(val.values()))))    
+    return (c, list(map(operator.mul, c, list(desal_constant.eq_w.values()))), list(map(operator.truediv, c, list(desal_constant.eq_w.values()))))    
 # end #
 
 # salt rejection (feed TDS, permeate TDS)
@@ -315,7 +231,7 @@ def calculate_blending_fraction(mod_rec, sys_rec):
 
 # specific energy consumption (blending fraction, ERD efficiency, module recovery, system recovery, TMP)
 def calculate_energy_consumption(blend_fr, erd_eff, pump_eff, mod_rec, tmp):
-    sec = blend_fr*(1 - erd_eff)/(1 - (1 - mod_rec)*blend_fr)*tmp/36
+    sec = blend_fr*(1 - erd_eff*(1 - mod_rec))/(1 - blend_fr*(1 - mod_rec))/pump_eff*tmp/36
     return sec
 
 # solution blending #
@@ -355,7 +271,7 @@ def do_phreeqc_blending(conc_f, temp_f, pH_f, conc_p, temp_p, pH_p, blend_fr, mo
         solution_b.total("Mg", units="mg"),
         solution_b.total("K", units="mg"),
         solution_b.total("Cl", units="mg"),
-        solution_b.total("S", units="mg"),
+        solution_b.total("SO4", units="mg"),
         solution_b.total("CO3", units="mg"),
         solution_b.total("HCO3", units="mg"),
         solution_b.total("NO3", units="mg"),
