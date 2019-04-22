@@ -19,7 +19,7 @@ feed_flow = desal_formula.do_system_design(input_system["flow rate"], desal_cons
 no_of_pass = desal_formula.do_system_design(input_system["flow rate"], desal_constant.max_flux[input_water["water type"]], input_membrane["surface area"], \
     input_system["module recovery"], blend_fr)[1]
 
-# create main objects feed, permeate, concentrate, membrane
+# create main objects: feed, permeate, concentrate, membrane
 feed1 = desal_data.Feed(input_water["concentration"], input_water["temperature"], input_water["pH"], input_system["module recovery"], feed_flow)
 permeate1 = desal_data.Permeate()
 concentrate1 = desal_data.Concentrate()
@@ -43,7 +43,7 @@ fric = desal_formula.calculate_friction_drop(rey, membrane1.x, membrane1.y)
 lw = desal_formula.calculate_solvent_permeabilty(membrane1.lw0, feed1.temp, feed1.tds_eq, cpf, membrane1.a1, membrane1.a2, membrane1.a3)
 ls = desal_formula.calculate_solute_permeability(membrane1.ls0, feed1.temp, feed1.tds_eq, cpf, membrane1.b1, membrane1.b2, membrane1.b3)
 
-# concentrations estimation
+# water quality
 permeate1.conc_eq = desal_formula.calculate_permeate_species(feed1.conc_eq, desal_constant.rjec_coef[input_membrane["membrane type"]], ls, flux)[0]
 permeate1.conc_mg = desal_formula.calculate_permeate_species(feed1.conc_eq, desal_constant.rjec_coef[input_membrane["membrane type"]], ls, flux)[1]
 permeate1.conc_mol = desal_formula.calculate_permeate_species(feed1.conc_eq, desal_constant.rjec_coef[input_membrane["membrane type"]], ls, flux)[2]
@@ -68,7 +68,6 @@ concentrate1.pH = desal_formula.do_phreeqc_output(concentrate1.conc_mg, concentr
 
 # scaling indices
 feed1.si = desal_formula.do_phreeqc_input(input_water["concentration"], input_water["temperature"], input_water["pH"])[1]
-
 permeate1.si = desal_formula.do_phreeqc_output(permeate1.conc_mg, permeate1.temp, co2)[1]
 concentrate1.si = desal_formula.do_phreeqc_output(concentrate1.conc_mg, concentrate1.temp, co2)[1]
 concentrate1.istr = desal_formula.calculate_ionic_strength(concentrate1.conc_eq)

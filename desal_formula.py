@@ -234,7 +234,7 @@ def calculate_energy_consumption(blend_fr, erd_eff, pump_eff, mod_rec, tmp):
     sec = blend_fr*(1 - erd_eff*(1 - mod_rec))/(1 - blend_fr*(1 - mod_rec))/pump_eff*tmp/36
     return sec
 
-# solution blending #
+# solution blending (water quality, temperature, pH of feed and permeate, blending fraction, module recovery)
 def do_phreeqc_blending(conc_f, temp_f, pH_f, conc_p, temp_p, pH_p, blend_fr, mod_rec):
     pp = phreeqpython.PhreeqPython()
     solution_f = pp.add_solution({
