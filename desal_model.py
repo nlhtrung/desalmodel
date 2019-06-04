@@ -3,6 +3,7 @@ import desal_formula
 import desal_input
 import desal_constant
 
+
 # fetch data from input file
 input_water = desal_input.water
 input_membrane = desal_input.membrane

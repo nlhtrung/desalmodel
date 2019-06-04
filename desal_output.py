@@ -1,5 +1,6 @@
 import desal_model
 
+
 out1 = {
     "Na":   desal_model.output_water[0],
     "Ca":   desal_model.output_water[1],

@@ -3,7 +3,6 @@ import desal_formula
 import desal_constant
 
 
-
 # define feed (concentrations, temperature, pH, module recovery, system recovery, flow rate in m3/h)
 class Feed:
     def __init__ (self, conc_mg, temp, pH, mod_rec, fl_m3h):   
@@ -42,9 +41,6 @@ class Feed:
         self.si = 0
         self.scale = []
 
-
-
-
 # define membrane (area, module diameter, spacer thickness, module length, effective area, a1,2,3, b1,2,3, Lw0, Ls0, x, y)
 class Membrane:
     def __init__ (self, area, diam, thik, leng, a1, a2, a3, b1, b2, b3, lw0, ls0, x, y):
@@ -65,11 +61,12 @@ class Membrane:
         self.x = x
         self.y = y
 
+# define permeate (placeholder)
 class Permeate:
     def __init__ (self):
         pass
 
-
+# define permeate (placeholder)
 class Concentrate:
     def __init__ (self):
         pass

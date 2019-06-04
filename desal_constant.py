@@ -11,7 +11,7 @@ eq_w = {
     "NO3": 62.00,
 }
 
-# valency
+# ion valency
 val = {
     "Na": 1,
     "Ca": 2,
@@ -74,7 +74,7 @@ rjec_coef = {
     },
 }
 
-# maximum flux
+# design guideline: maximum flux
 max_flux = {
     "BW": 0.034,
     "SW": 0.020,
