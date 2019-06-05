@@ -20,7 +20,7 @@ membrane = {
     "module diameter": 0.2,     # m
     "spacer thickness": 0.0008, # m
     "module length": 1,         # m
-    "a1": 0.802,                # temperatur
+    "a1": 0.802,                # temperature
     "a2": -0.549,               # feec concentration
     "a3": 0,                    # scaling 
     "b1": 0.970,                # temperature
