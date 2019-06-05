@@ -37,7 +37,7 @@ diff_coef = {
     "NO3": 1.902,
 }
 
-# rejection coefficient
+# rejection parameter
 rjec_coef = { 
     "BWRO": {
         "Na": 1.00,
