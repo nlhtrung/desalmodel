@@ -41,6 +41,16 @@ class Feed:
         self.si = 0
         self.scale = []
 
+# define permeate (placeholder)
+class Permeate:
+    def __init__ (self):
+        pass
+
+# define permeate (placeholder)
+class Concentrate:
+    def __init__ (self):
+        pass
+
 # define membrane (area, module diameter, spacer thickness, module length, effective area, a1,2,3, b1,2,3, Lw0, Ls0, x, y)
 class Membrane:
     def __init__ (self, area, diam, thik, leng, a1, a2, a3, b1, b2, b3, lw0, ls0, x, y):
@@ -60,13 +70,3 @@ class Membrane:
         self.ls0 = ls0
         self.x = x
         self.y = y
-
-# define permeate (placeholder)
-class Permeate:
-    def __init__ (self):
-        pass
-
-# define permeate (placeholder)
-class Concentrate:
-    def __init__ (self):
-        pass
